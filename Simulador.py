@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from numpy.core.fromnumeric import sort
 import os
 
-
+#Sensor class, not completed used in its full potential yet
 class sensor:
     newid = itertools.count().__next__
     
@@ -24,8 +24,7 @@ class sensor:
     
     def activation(self):
         #Lembrar de no futuro verificar se o sensor pode se reativar enquanto ainda está ativo
-        
-        
+
         rand = random.random()
         self.active = (rand<self.precision)
         
@@ -44,7 +43,7 @@ class sensor:
     def getActive(self):
         return self.active
 
-    
+#Sala means room in portuguese, I think the rest is pretty self explanatory  
 class sala:
     def __init__(self, size, dist):
         self.size = tuple(map( lambda x: int(x/dist), size) )
@@ -81,7 +80,6 @@ class sala:
         for s in self.sensors:
             x, y = pos
             xs, ys = s.pos
-            
 
             if s.axis == 1 and xs <= x:
                 s.activation()
@@ -95,13 +93,15 @@ class sala:
                     col, _ = self.size
                     tempMat[1:, ys+1]=np.full(col, 1)
         
-        print(tempMat)
+        #print(tempMat)
         
         return 
     
     def getSensors(self):
         return self.sensors
 
+#This is a prototype of the localization function we will use in data analisys
+#Used by printData only
 def vote(a):
     sens = a.getSensors()
     tempMat = np.zeros((a.monitorMatrix.shape))
@@ -141,6 +141,8 @@ def vote(a):
 
     return tempMat, maxTuple
 
+#Save image representation of moviment possible position based on "vote"
+#Helpful with visualization of scripts and debugging
 def printData(data, step):
     val1, val2 = data.shape
     fig = plt.figure()
@@ -159,25 +161,7 @@ def printData(data, step):
     fig.savefig("step_{}.png".format(step+1), dpi=70)
     plt.close()
 
-
-def printCasa(data, step):
-    val1, val2 = data.shape
-    fig = plt.figure()
-    plt.rcParams["figure.figsize"] = (20,20)
-    plt.rcParams['xtick.labelsize'] = 2
-    plt.rcParams['ytick.labelsize'] = 2
-    plt.imshow(data)
-    ax = plt.gca()
-    ax.set_xticks(np.arange(0, val2, 0.5))
-    ax.set_yticks(np.arange(0, val1, 0.5))
-    ax.set_xticklabels(np.arange( 0,val2, 0.5))
-    ax.set_yticklabels([ i*0.5 for i in range((val1*2)-1, -1, -1)])
-    plt.grid(which='both', axis='both', linestyle='-', color='k', linewidth=0.5)
-    #plt.show()
-    plt.draw()
-    fig.savefig("D:/Simulador/casa/casa_step_{}.png".format(step+1), dpi=200)
-    plt.close()
-
+#Save the actual room of each sensor
 def sensorClasses(house):
     correctClass = open("correct.csv", "a")
     correctClass.write("id;class\n")
@@ -185,6 +169,7 @@ def sensorClasses(house):
         for s in house[key]["room"].getSensors():
             correctClass.write(str(s.getId())+";"+key+"\n")
 
+#Save sensors data to a CSV file, receive the ambient definition
 def writeCSV(house):
     exist = os.path.exists("data.csv")
     csv_file = open("data.csv", "a") 
@@ -210,57 +195,74 @@ def writeCSV(house):
 
 class controlador:
     def __init__(self):
+
+        #Ambient definition, in future will be made by reading a file
         self.house = {
 
             "sala" : {
-                "room": sala((3,6), 0.5),
+                "room": sala((4,3.5), 0.5),
                 "links":{
-                    '(1, 1)': 'corredor'
+                    '(0, 6)': 'corredor',
+                    '(1, 6)': 'corredor'
                 }
             },
             "quarto1" : {
-                "room": sala((3,5), 0.5),
+                "room": sala((3,3), 0.5),
                 "links":{
-                    '(3, 0)': 'corredor'
+                    '(0, 5)': 'corredor'
                 }
             },
 
             "quarto2" : {
-                "room": sala((3,5), 0.5),
+                "room": sala((3,4), 0.5),
                 "links":{
-                    '(3, 0)': 'corredor'
+                    '(0, 0)': 'corredor'
                 }
             },
 
             "quarto3" : {
-                "room": sala((3,5), 0.5),
+                "room": sala((3,3), 0.5),
                 "links":{
-                    '(3, 0)': 'corredor'
+                    '(5, 0)': 'corredor'
                 }
             },
 
             "corredor" : {
-                "room": sala((6,1), 0.5),
+                "room": sala((1,4.5), 0.5),
                 "links":{
-                    '(1, 1)': 'sala',
-                    '(1, 2)': 'quarto1',
-                    '(4, 2)': 'quarto2',
-                    '(7, 2)': 'quarto3',
-                    '(9, 1)': 'cozinha'
+                    '(0, 0)': 'sala',
+                    '(1, 0)': 'sala',
+                    '(1, 5)': 'quarto1',
+                    '(1, 7)': 'quarto2',
+                    '(1, 8)': 'quarto2',
+                    '(0, 2)': 'cozinha',
+                    '(0, 3)': 'banheiro1',
+                    '(0, 6)': 'banheiro2',
                 }
             },
 
             "cozinha" : {
-                "room": sala((4, 6), 0.5),
+                "room": sala((2, 3), 0.5),
                 "links":{
-                    '(4, 1)': 'corredor',
-                    '(1, 1)': 'cozinha'
+                    '(4, 5)': 'corredor',
                 }
             },
-            "quintal" : {
-                "room": sala((4,6), 0.5),
+            "varanda" : {
+                "room": sala((2,2), 0.5),
                 "links":{
-                    '(4, 5)': 'cozinha'
+                    '(3, 3)': 'sala'
+                }
+            },
+            "banheiro1" : {
+                "room": sala((1.5,2), 0.5),
+                "links":{
+                    '(2, 0)': 'corredor'
+                }
+            },
+            "banheiro2" : {
+                "room": sala((1.5,2), 0.5),
+                "links":{
+                    '(2, 0)': 'corredor'
                 }
             }
     }
@@ -272,6 +274,7 @@ class controlador:
     def rand_moviment(self, steps, init_room, pos):
         ang = 0
         
+        #Decision of the next step direction 
         def next_ang(ang):
             rand = random.random()
             if(rand<0.55): 
@@ -289,7 +292,7 @@ class controlador:
             elif(rand>=0.97 and rand<0.99): 
                 return (ang+3)%8
             elif(rand>=0.99 ): return (ang+4)%8
-            
+        
         def next_step(ang, pos):
             if(ang==0): 
                 return tuple(map( lambda x, y: x+y, pos, (0,1) ))
@@ -328,38 +331,37 @@ class controlador:
                 data, posi = vote(self.house[init_room]["room"])
                 printData(data, (total-steps))
             except:
-                print("Deu ruim!")
-            
-            '''matrixMat = np.zeros((40,12))
-            matrixMat[14:20, 2:12] = data
-            printCasa(matrixMat, (total-steps))'''
+                print("Movementation fail in random walk")
 
             steps-=1
 
-    def scripted_moviment(self, steps, init_room):
+    def parser(selsf, script):
+        temp_script = []
+        for i in script:
+            posI, posJ, steps = i
+            temp_script+= ([(posI, posJ)]*steps)
+        return  temp_script
+
+    def scripted_moviment(self, steps, room):
         count = 0
         chegando=False
         sensorClasses(self.house)
+        steps = self.parser(steps)
         for i in steps:
             for key in self.house.keys():
                 self.house[key]["room"].sensorsTimePass()
             
             try:
-                self.house[init_room]["room"].movement(i)
+                self.house[room]["room"].movement(i)
                 writeCSV(self.house)
-                #print(init_room)
-                data, posi = vote(self.house[init_room]["room"])
+                data, posi = vote(self.house[room]["room"])
                 printData(data, count)
             except:
-                print("Deu ruim!")
+                print("Movementation fail in scripted walk!")
             
-            '''print(i)
-            print(str(i) in self.house[init_room]["links"].keys())
-            print(chegando)
-            print()
-            '''
-            if str(i) in self.house[init_room]["links"].keys() and chegando!=True:
-                init_room = self.house[init_room]["links"][str(i)]
+            #In a brief future the transition scheme will be changed so it can be chosen to be taken in script
+            if str(i) in self.house[room]["links"].keys() and chegando!=True:
+                room = self.house[room]["links"][str(i)]
                 chegando = True
             elif(chegando == True):
                 chegando = False    
@@ -368,7 +370,7 @@ class controlador:
 
 controller = controlador ()
 
-script = [(1,3),(2,2),(3,2),(3,1),(3,0),(1,2),(2,2),(3,2),(4,2),(3,0),(3,1)]
+script = [(3,0,1),(2,1,3),(2,2,2),(1,3,3),(1,4,1),(0,5,1), (1, 5,1), (1,6,2), (1,7,3), (0,0,1), (1,1,1), (2,2,1)]
 
 #script1 = [(0,0),(1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(7,8),(7,9)]
 
